@@ -178,11 +178,24 @@ See [Execution reconciliation](../concepts/execution#execution-reconciliation) f
 
 If an order's status cannot be reconciled after exhausting all retries, the engine resolves the order as follows:
 
+**In-flight order timeout resolution** (when venue doesn't respond after max retries):
+
 | Current status   | Resolved to | Rationale                                  |
 |------------------|-------------|--------------------------------------------|
-| `SUBMITTED`      | `REJECTED`  | No confirmation received.                  |
+| `SUBMITTED`      | `REJECTED`  | No confirmation received from venue.       |
 | `PENDING_UPDATE` | `CANCELED`  | Modification remains unacknowledged.       |
 | `PENDING_CANCEL` | `CANCELED`  | Venue never confirmed the cancellation.    |
+
+**Order consistency checks** (when cache state differs from venue state):
+
+| Cache status       | Venue status | Resolution  | Rationale                                                           |
+|--------------------|--------------|-------------|---------------------------------------------------------------------|
+| `ACCEPTED`         | Not found    | `REJECTED`  | Order doesn't exist at venue, likely was never successfully placed. |
+| `ACCEPTED`         | `CANCELED`   | `CANCELED`  | Venue canceled the order (user action or venue-initiated).          |
+| `ACCEPTED`         | `EXPIRED`    | `EXPIRED`   | Order reached GTD expiration at venue.                              |
+| `ACCEPTED`         | `REJECTED`   | `REJECTED`  | Venue rejected after initial acceptance (rare but possible).        |
+| `PARTIALLY_FILLED` | `CANCELED`   | `CANCELED`  | Order canceled at venue with fills preserved.                       |
+| `PARTIALLY_FILLED` | Not found    | `CANCELED`  | Order doesn't exist but had fills (reconciles fill history).        |
 
 This ensures the trading node maintains a consistent execution state even under unreliable conditions.
 

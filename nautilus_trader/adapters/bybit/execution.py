@@ -345,7 +345,7 @@ class BybitExecutionClient(LiveExecutionClient):
     ) -> list[OrderStatusReport]:
         instrument_id = command.instrument_id
 
-        self._log.debug("Requesting OrderStatusReports...")
+        self._log.debug(f"Requesting OrderStatusReports... open_only={command.open_only}")
         reports: list[OrderStatusReport] = []
 
         try:
@@ -359,6 +359,7 @@ class BybitExecutionClient(LiveExecutionClient):
                     product_type,
                     symbol,
                     command.open_only,
+                    command.start,
                 )
                 for bybit_order in bybit_orders:
                     # Uncomment for development
